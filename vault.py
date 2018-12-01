@@ -7,53 +7,46 @@ class Vault(Frame):
 
     #if program is already set up
     def start_screen(self):
-        #master frame for start screen
+        # start_screen GUI #
         self.frame = Frame(self.master, bg="dark grey")
-
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
                              bg="black", fg="white", font=("Courier New", 20))
         self.headLbl.pack(side=TOP, fill=X)
         self.pswd_frame = Frame(self.frame, bg="dark grey")
-        self.pswd_label = Label(self.pswd_frame, text="Please enter your password", 
-                                height=2, bg="dark grey", fg="white", 
+        self.pswd_label = Label(self.pswd_frame, height=2, bg="dark grey",
+                                text="Please enter your password", fg="white",
                                 font=("Courier New", 18))
         self.pswd_label.pack(side=TOP, fill=X)
-        
         self.password_box = Entry(self.pswd_frame, show='*')
         self.password_box.bind('<Return>', self.login)
         self.password_box.pack(side=TOP)
-
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
     def setup_screen(self):
         self.frame = Frame(self.master, bg="#282828")
-
-        self.headLbl = Label(self.frame, text="Vault Password Manager Setup", 
-                             bg="black", fg="white", font=("Courier New", 20))
+        self.headLbl = Label(self.frame, bg="black", fg="white",
+                             text="Vault Password Manager Setup", 
+                             font=("Courier New", 20))
         self.headLbl.pack(side=TOP, fill=X)
-
         self.pswd_frame = Frame(self.frame, bg="#282828")
-        self.pswd_label = Label(self.pswd_frame, text="Please enter a password", 
-                                height=2, bg="#282828", fg="white", 
+        self.pswd_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                text="Please enter a password", fg="white", 
                                 font=("Courier New", 18))
         self.pswd_label.pack(side=TOP, fill=X)
-        
         self.password_one = StringVar()
-        self.password1_box = Entry(self.pswd_frame, 
+        self.password1_box = Entry(self.pswd_frame,
                                    textvariable=self.password_one, show='*')
         self.password1_box.pack(side=TOP)
-
-        self.repeat_label = Label(self.pswd_frame, text="Enter password again", 
-                                height=2, bg="#282828", fg="white", 
-                                font=("Courier New", 18))
+        self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                  text="Enter password again" fg="white", 
+                                  font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
-
         self.password_two = StringVar()
-        self.password2_box = Entry(self.pswd_frame, textvariable=self.password_two, show='*')
+        self.password2_box = Entry(self.pswd_frame, 
+                                   textvariable=self.password_two, show='*')
         self.password2_box.bind('<Return>', self.password_setup)
         self.password2_box.pack(side=TOP)
-        
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -81,12 +74,6 @@ class Vault(Frame):
             self.setup_screen()
 
  
-
-
-
-
-
-
 root = Tk()
 app = Vault(root)
 root.title("Password Manager")
