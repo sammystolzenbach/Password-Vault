@@ -97,7 +97,11 @@ class Vault(Frame):
         master_iv = iv_cipher.decrypt(self.enc_iv)
         cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
         master_pass = cipher.decrypt(self.enc_master_pass)
-        return master_pass == password_input
+        if(master_pass == password_input):
+            master_pass = "" # to reduce time master password is in memory
+            return True
+        else:
+            return False
 
 
     def __init__(self, master):
