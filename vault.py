@@ -97,40 +97,49 @@ class Vault(Frame):
 
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
+        padded_master_pass = Padding.pad(master_pass, AES.block_size)
         salt = Random.get_random_bytes(8)    #Create random salt
         master_iv = Random.get_random_bytes(AES.block_size)    
         derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
         cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
-        enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
+        enc_padded_master_pass = cipher.encrypt(padded_master_pass)   #Encrypt master password with AES.CTR
         iv_cipher = AES.new(derived_key, AES.MODE_ECB)
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
-        ofile.write(salt + enc_master_iv + enc_master_pass)     #write out to file
+        ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
+        ofile.write('\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
-
-    #take password file, parse salt, nonce, encrypted master password and stores those, they will be passed to a function that validates them
 
     def parse_file(self, password_file):
         ifile = open(password_file, 'rb')
         file_contents = ifile.read()
         self.salt = file_content[:8]
-        self.enc_iv = file_content[8:40]
-        self.enc_master_pass = file_content[40:(40+AES.block_size)]
+        self.enc_iv = file_content[8:24]
+        self.enc_master_pass = file_content[24:(24+AES.block_size)]
 
     def validate_login(self, password_input):
         derived_key = PBKDF2(password_input, self.salt, count=1000)
         iv_cipher = AES.new(derived_key, AES.MODE_ECB)
         master_iv = iv_cipher.decrypt(self.enc_iv)
         cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
-        master_pass = cipher.decrypt(self.enc_master_pass)
+        padded_master_pass = cipher.decrypt(self.enc_master_pass)
+        master_pass = Padding.unpad(padded_master_pass, AES.block_size)
         if(master_pass == password_input):
             master_pass = "" # to reduce time master password is in memory
             return True
         else:
             return False
-
+        
+    def enc_and_add_password(self, new_password, password_file, derived_key):
+        padded_new_password = Padding.pad(new_password, AES.block_size)     
+        iv = Random.get_random_bytes(AES.block_size)
+        cipher = AES.new(derived_key, AES.MODE_CBC, iv)
+        enc_padded_new_password = cipher.encrypt(padded_new_password)
+        with open(password_file, "a") as myfile:        
+            myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
+            myfile.write('\n') 
 
     def __init__(self, master):
         # a test comment :)
