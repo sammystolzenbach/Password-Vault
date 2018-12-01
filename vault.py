@@ -50,22 +50,33 @@ root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.mainloop()
 
-
+import sys, getopt
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256, HMAC
+from Crypto import Random
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Util import Counter
 
 '''    Program setup:
         - Detect if theres a current encrypted password file, if so, move on
         Function: 
             Takes in the user's new master password with restrictions
             Read and validate
-        Function:
-            Create random salt
-            Make a random IV
-            use PBKDFS with salt to make master password to derived key
-            Encrypt master password and IV with ECB
-            write out to file
-            ** Make sure plaintext of master password not in memory for
-                too long!! **
-
+'''
+def create_derived_key(master_pass,password_file):
+    master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
+    salt = Random.get_random_bytes(8)    #Create random salt
+    nonce = Random.get_random_bytes(8)    #Make a random nonce
+    derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
+    ctr = Counter.new(64, prefix=nonce, initial_value=0)
+    cipher = AES.new(derived_key, AES.MODE_CTR, counter=ctr)
+    enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
+    ofile = open(password_file, 'wb')
+    ofile.write(salt + nonce + enc_master_pass)     #write out to file
+    ofile.close()
+    #** Make sure plaintext of master password not in memory for
+    #too long!! **
+'''
         Function:
             reads in and parses encrypted file so that we have
             the salt, the iv, and the stored ENC master password
