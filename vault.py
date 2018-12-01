@@ -39,7 +39,7 @@ class Vault(Frame):
                                    textvariable=self.password_one, show='*')
         self.password1_box.pack(side=TOP)
         self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
-                                  text="Enter password again" fg="white", 
+                                  text="Enter password again", fg="white", 
                                   font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
         self.password_two = StringVar()
@@ -80,7 +80,6 @@ root.title("Password Manager")
 root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.mainloop()
-
 
 
 '''    Program setup:
