@@ -113,7 +113,7 @@ class Vault(Frame):
     #take password file, parse salt, nonce, encrypted master password and stores those, they will be passed to a function that validates them
 
     def parse_file(self, password_file):
-        ifile = open.(password_file, 'rb')
+        ifile = open(password_file, 'rb')
         file_contents = ifile.read()
         self.salt = file_content[:8]
         self.enc_iv = file_content[8:40]
