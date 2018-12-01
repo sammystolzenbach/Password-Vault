@@ -82,6 +82,7 @@ class Vault(Frame):
     #too long!! **
 
     def __init__(self, master):
+        # a test comment :)
         Frame.__init__(self, master)               
         self.master = master
         self.pack()
