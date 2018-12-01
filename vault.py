@@ -7,6 +7,8 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
+from Crypto.Util import Padding
+
 
 class Vault(Frame):
 
@@ -33,6 +35,8 @@ class Vault(Frame):
                                   textvariable=self.validated, fg="white", 
                                   font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
+
+        self.parse_file("passwords.hex")
 
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
@@ -81,8 +85,6 @@ class Vault(Frame):
         attempts = 0
         self.password_attempt = self.password_input.get()
 
-        print("attempt")
-        print("input: ", self.password_attempt)
         success = self.validate_login(self.password_attempt)
     
         if (attempts >= 3):
@@ -107,14 +109,14 @@ class Vault(Frame):
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
         ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
-        ofile.write('\n')
+        ofile.write(b'\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
 
     def parse_file(self, password_file):
         ifile = open(password_file, 'rb')
-        file_contents = ifile.read()
+        file_content = ifile.read()
         self.salt = file_content[:8]
         self.enc_iv = file_content[8:24]
         self.enc_master_pass = file_content[24:(24+AES.block_size)]
@@ -126,6 +128,8 @@ class Vault(Frame):
         cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
         padded_master_pass = cipher.decrypt(self.enc_master_pass)
         master_pass = Padding.unpad(padded_master_pass, AES.block_size)
+        master_pass = master_pass.decode('ascii')
+
         if(master_pass == password_input):
             master_pass = "" # to reduce time master password is in memory
             return True
