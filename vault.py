@@ -97,15 +97,17 @@ class Vault(Frame):
 
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
+        padded_master_pass = Padding.pad(master_pass, AES.block_size)
         salt = Random.get_random_bytes(8)    #Create random salt
         master_iv = Random.get_random_bytes(AES.block_size)    
         derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
         cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
-        enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
+        enc_padded_master_pass = cipher.encrypt(padded_master_pass)   #Encrypt master password with AES.CTR
         iv_cipher = AES.new(derived_key, AES.MODE_ECB)
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
-        ofile.write(salt + enc_master_iv + enc_master_pass) #write out to file
+        ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
+        ofile.write('\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
@@ -129,7 +131,15 @@ class Vault(Frame):
             return True
         else:
             return False
-
+        
+    def enc_and_add_password(self, new_password, password_file, derived_key):
+        padded_new_password = Padding.pad(new_password, AES.block_size)     
+        iv = Random.get_random_bytes(AES.block_size)
+        cipher = AES.new(derived_key, AES.MODE_CBC, iv)
+        enc_padded_new_password = cipher.encrypt(padded_new_password)
+        with open(password_file, "a") as myfile:        
+            myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
+            myfile.write('\n') 
 
     def __init__(self, master):
         # a test comment :)
