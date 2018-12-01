@@ -4,7 +4,6 @@ from tkinter import *
 import os
 import sys, getopt
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256, HMAC
 from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
