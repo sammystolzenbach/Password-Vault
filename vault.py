@@ -13,18 +13,27 @@ class Vault(Frame):
     #if program is already set up
     def start_screen(self):
         # start_screen GUI #
-        self.frame = Frame(self.master, bg="dark grey")
+        self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
                              bg="black", fg="white", font=("Courier New", 20))
         self.headLbl.pack(side=TOP, fill=X)
-        self.pswd_frame = Frame(self.frame, bg="dark grey")
-        self.pswd_label = Label(self.pswd_frame, height=2, bg="dark grey",
+        self.pswd_frame = Frame(self.frame, bg="#282828")
+        self.pswd_label = Label(self.pswd_frame, height=2, bg="#282828",
                                 text="Please enter your password", fg="white",
                                 font=("Courier New", 18))
         self.pswd_label.pack(side=TOP, fill=X)
-        self.password_box = Entry(self.pswd_frame, show='*')
+        self.password_input = StringVar()
+        self.password_box = Entry(self.pswd_frame, textvariable=self.password_input,
+                                  show='*')
         self.password_box.bind('<Return>', self.login)
         self.password_box.pack(side=TOP)
+
+        self.validated = StringVar()
+        self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                  textvariable=self.validated, fg="white", 
+                                  font=("Courier New", 18))
+        self.repeat_label.pack(side=TOP)
+
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -63,17 +72,36 @@ class Vault(Frame):
             print("passwords don't match")
         else:
             print("passwords match!")
+            self.create_derived_key(pass_2, "passwords.hex")
+            self.frame.destroy()
+            self.start_screen()
 
     def login(self, event):
-        print("test")
- 
+        success = False
+        attempts = 0
+        self.password_attempt = self.password_input.get()
+
+        print("attempt")
+        print("input: ", self.password_attempt)
+        success = self.validate_login(self.password_attempt)
+    
+        if (attempts >= 3):
+            print("bro!!!!")
+
+        if (not success):
+            self.validated.set("Invalid password.")
+            attempts = attempts + 1
+        else:
+            self.validated.set("Success")
+
+
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
         salt = Random.get_random_bytes(8)    #Create random salt
         nonce = Random.get_random_bytes(8)    #Make a random nonce
         derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
         ctr = Counter.new(64, prefix=nonce, initial_value=0)
-        cipher = AES.new(derived_key, AES.MODE_CTR, counter=ctr)
+        cipher = AES.new(derived_key, AES.MODE_CTR, counter=self.ctr)
         enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
         ofile = open(password_file, 'wb')
         ofile.write(salt + nonce + enc_master_pass)     #write out to file
@@ -87,7 +115,7 @@ class Vault(Frame):
         self.pack()
 
         #check if setup is needed
-        if (os.path.isfile("./passwords.txt")):
+        if (os.path.isfile("./passwords.hex")):
             self.start_screen()
         else:
             self.setup_screen()
@@ -122,7 +150,7 @@ root.mainloop()
     Program start:
         Function:
             Takes in password
-            Uses salt to generate derived password P
+            Uses salt to generate derived key P
             Uses derived password P to decrypt IV with AES_ECB
             Uses IV and P to decrypt master password with AES_CBC
             Sees if password = master password
