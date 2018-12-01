@@ -7,24 +7,36 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
+from Crypto.Util import Padding
 
 class Vault(Frame):
 
     #if program is already set up
     def start_screen(self):
         # start_screen GUI #
-        self.frame = Frame(self.master, bg="dark grey")
+        self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
                              bg="black", fg="white", font=("Courier New", 20))
         self.headLbl.pack(side=TOP, fill=X)
-        self.pswd_frame = Frame(self.frame, bg="dark grey")
-        self.pswd_label = Label(self.pswd_frame, height=2, bg="dark grey",
+        self.pswd_frame = Frame(self.frame, bg="#282828")
+        self.pswd_label = Label(self.pswd_frame, height=2, bg="#282828",
                                 text="Please enter your password", fg="white",
                                 font=("Courier New", 18))
         self.pswd_label.pack(side=TOP, fill=X)
-        self.password_box = Entry(self.pswd_frame, show='*')
+        self.password_input = StringVar()
+        self.password_box = Entry(self.pswd_frame, textvariable=self.password_input,
+                                  show='*')
         self.password_box.bind('<Return>', self.login)
         self.password_box.pack(side=TOP)
+
+        self.validated = StringVar()
+        self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                  textvariable=self.validated, fg="white", 
+                                  font=("Courier New", 18))
+        self.repeat_label.pack(side=TOP)
+
+        self.parse_file("passwords.hex")
+
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -44,7 +56,7 @@ class Vault(Frame):
                                    textvariable=self.password_one, show='*')
         self.password1_box.pack(side=TOP)
         self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
-                                  text="Enter password again" fg="white", 
+                                  text="Enter password again", fg="white", 
                                   font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
         self.password_two = StringVar()
@@ -63,23 +75,74 @@ class Vault(Frame):
             print("passwords don't match")
         else:
             print("passwords match!")
+            self.create_derived_key(pass_2, "passwords.hex")
+            self.frame.destroy()
+            self.start_screen()
 
     def login(self, event):
-        print("test")
- 
+        success = False
+        attempts = 0
+        self.password_attempt = self.password_input.get()
+
+        success = self.validate_login(self.password_attempt)
+    
+        if (attempts >= 3):
+            print("bro!!!!")
+
+        if (not success):
+            self.validated.set("Invalid password.")
+            attempts = attempts + 1
+        else:
+            self.validated.set("Success")
+
+
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
+        padded_master_pass = Padding.pad(master_pass, AES.block_size)
         salt = Random.get_random_bytes(8)    #Create random salt
-        nonce = Random.get_random_bytes(8)    #Make a random nonce
+        master_iv = Random.get_random_bytes(AES.block_size)    
         derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
-        ctr = Counter.new(64, prefix=nonce, initial_value=0)
-        cipher = AES.new(derived_key, AES.MODE_CTR, counter=ctr)
-        enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
+        cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
+        enc_padded_master_pass = cipher.encrypt(padded_master_pass)   #Encrypt master password with AES.CTR
+        iv_cipher = AES.new(derived_key, AES.MODE_ECB)
+        enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
-        ofile.write(salt + nonce + enc_master_pass)     #write out to file
+        ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
+        ofile.write(b'\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
+
+    def parse_file(self, password_file):
+        ifile = open(password_file, 'rb')
+        file_content = ifile.read()
+        self.salt = file_content[:8]
+        self.enc_iv = file_content[8:24]
+        self.enc_master_pass = file_content[24:(24+AES.block_size)]
+
+    def validate_login(self, password_input):
+        derived_key = PBKDF2(password_input, self.salt, count=1000)
+        iv_cipher = AES.new(derived_key, AES.MODE_ECB)
+        master_iv = iv_cipher.decrypt(self.enc_iv)
+        cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
+        padded_master_pass = cipher.decrypt(self.enc_master_pass)
+        master_pass = Padding.unpad(padded_master_pass, AES.block_size)
+        master_pass = master_pass.decode('ascii')
+
+        if(master_pass == password_input):
+            master_pass = "" # to reduce time master password is in memory
+            return True
+        else:
+            return False
+        
+    def enc_and_add_password(self, new_password, password_file, derived_key):
+        padded_new_password = Padding.pad(new_password, AES.block_size)     
+        iv = Random.get_random_bytes(AES.block_size)
+        cipher = AES.new(derived_key, AES.MODE_CBC, iv)
+        enc_padded_new_password = cipher.encrypt(padded_new_password)
+        with open(password_file, "a") as myfile:        
+            myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
+            myfile.write(b'\n') 
 
     def __init__(self, master):
         # a test comment :)
@@ -88,7 +151,7 @@ class Vault(Frame):
         self.pack()
 
         #check if setup is needed
-        if (os.path.isfile("./passwords.txt")):
+        if (os.path.isfile("./passwords.hex")):
             self.start_screen()
         else:
             self.setup_screen()
@@ -101,12 +164,15 @@ root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.mainloop()
 
+<<<<<<< HEAD
 import sys, getopt
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256, HMAC
 from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
+=======
+>>>>>>> 694a7f57d8b8bc3680d5bdacc835405ce9b3e3c4
 
 '''    Program setup:
         - Detect if theres a current encrypted password file, if so, move on
@@ -135,7 +201,7 @@ def create_derived_key(master_pass,password_file):
     Program start:
         Function:
             Takes in password
-            Uses salt to generate derived password P
+            Uses salt to generate derived key P
             Uses derived password P to decrypt IV with AES_ECB
             Uses IV and P to decrypt master password with AES_CBC
             Sees if password = master password
