@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
+from Crypto.Util import Padding
 
 class Vault(Frame):
 
