@@ -2,6 +2,11 @@
 from tkinter import *
 #from PIL import ImageTk, Image
 import os
+import sys, getopt
+from Crypto.Cipher import AES
+from Crypto import Random
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Util import Counter
 
 class Vault(Frame):
 
@@ -62,6 +67,20 @@ class Vault(Frame):
     def login(self, event):
         print("test")
  
+    def create_derived_key(self, master_pass, password_file):
+        master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
+        salt = Random.get_random_bytes(8)    #Create random salt
+        nonce = Random.get_random_bytes(8)    #Make a random nonce
+        derived_key = PBKDF2(master_pass, salt, count=1000)  #use PBKDFS with salt to make master password to derived key
+        ctr = Counter.new(64, prefix=nonce, initial_value=0)
+        cipher = AES.new(derived_key, AES.MODE_CTR, counter=ctr)
+        enc_master_pass = cipher.encrypt(master_pass)   #Encrypt master password with AES.CTR
+        ofile = open(password_file, 'wb')
+        ofile.write(salt + nonce + enc_master_pass)     #write out to file
+        ofile.close()
+    #** Make sure plaintext of master password not in memory for
+    #too long!! **
+
     def __init__(self, master):
         Frame.__init__(self, master)               
         self.master = master
