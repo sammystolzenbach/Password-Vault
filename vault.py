@@ -108,7 +108,7 @@ class Vault(Frame):
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
         ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
-        ofile.write('\n')
+        ofile.write(b'\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
@@ -140,7 +140,7 @@ class Vault(Frame):
         enc_padded_new_password = cipher.encrypt(padded_new_password)
         with open(password_file, "a") as myfile:        
             myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
-            myfile.write('\n') 
+            myfile.write(b'\n') 
 
     def __init__(self, master):
         # a test comment :)
