@@ -7,6 +7,7 @@ from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
 from Crypto.Util import Padding
+import re
 
 class Vault(Frame):
 
@@ -84,7 +85,16 @@ class Vault(Frame):
                              font=("Courier New", 20))
 
     def strength_validated(self, password):
-        return True
+        if re.match(r'!@#%&*()_~?><{}[]^\w+$', password):
+            if len(password) > 11 and len(password < 33):
+                if re.match(r'1234567890'):
+                    print('Success')
+                else:
+                    print('Password must have at least 1 number')
+            else:
+                print('Password must be between 12 and 32 characters')
+        else:
+            print('Password must have at least 1 special character')
 
 
     def password_setup(self, event):
