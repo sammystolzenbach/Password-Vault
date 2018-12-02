@@ -247,7 +247,7 @@ class Vault(Frame):
         with open(account_file, "a") as myfile:
             myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
 
-     # TODO we gotta this!
+     # TODO we test gotta this!
     def new_password(self, creating_new_password, new_password):
         if(creating_new_password):
             new_password = ""
