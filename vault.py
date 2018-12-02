@@ -169,6 +169,13 @@ class Vault(Frame):
                 return True
             else:
                 return False
+    def copy_pass_to_clipboard(self, password): 
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(password)
+        r.update() # now it stays on the clipboard after the window is closed
+        r.destroy()  
           
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
