@@ -14,6 +14,7 @@ class Vault(Frame):
     #if program is already set up
     def start_screen(self):
         self.parse_file("passwords.hex")
+        self.line_count = 0
         self.attempts = 0
 
         # start_screen GUI #
@@ -177,7 +178,13 @@ class Vault(Frame):
         with open(password_file, "a") as myfile:        
             myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
             myfile.write(b'\n') 
-
+     
+    def add_username_url_password(self, url, username, password, password_file, account_file): 
+    self.line_count += 1
+    self.enc_and_add_password(password, password_file, self.derived_key)
+    with open(account_file, "a") as myfile:
+        myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+            
     def __init__(self, master):
         Frame.__init__(self, master)               
         self.master = master
