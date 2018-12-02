@@ -7,12 +7,14 @@ from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
 from Crypto.Util import Padding
+import re
 
 class Vault(Frame):
 
     #if program is already set up
     def start_screen(self):
         self.parse_file("passwords.hex")
+        self.line_count = 0
         self.attempts = 0
 
         # start_screen GUI #
@@ -113,7 +115,16 @@ class Vault(Frame):
                              font=("Courier New", 20))
 
     def strength_validated(self, password):
-        return True
+        if re.match(r'!@#%&*()_~?><{}[]^\w+$', password):
+            if len(password) > 11 and len(password < 33):
+                if re.match(r'1234567890'):
+                    print('Success')
+                else:
+                    print('Password must have at least 1 number')
+            else:
+                print('Password must be between 12 and 32 characters')
+        else:
+            print('Password must have at least 1 special character')
 
     def search_by_username(self, event):
         return "Username"
@@ -163,7 +174,11 @@ class Vault(Frame):
         iv_cipher = AES.new(derived_key, AES.MODE_ECB)
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
-        ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
+        length_enc_padded_master_pass = len(enc_padded_master_pass).to_bytes(2, 'big')
+
+        print("length of encrypted master pass", len(enc_padded_master_pass))
+        print(length_enc_padded_master_pass)
+        ofile.write(salt + enc_master_iv + length_enc_padded_master_pass + enc_padded_master_pass)     #write out to file
         ofile.write(b'\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
@@ -174,7 +189,10 @@ class Vault(Frame):
         file_content = ifile.read()
         self.salt = file_content[:8]
         self.enc_iv = file_content[8:24]
-        self.enc_master_pass = file_content[24:(24+AES.block_size)]
+        # update this basedon len(enc padded master pass)
+        length_enc_padded_master_pass = int.from_bytes(file_content[24:26], byteorder='big')
+        print("in parse file", length_enc_padded_master_pass)
+        self.enc_master_pass = file_content[26:(26+length_enc_padded_master_pass)]
 
     def validate_login(self, password_input):
         self.derived_key = PBKDF2(password_input, self.salt, count=1000)
@@ -194,6 +212,13 @@ class Vault(Frame):
                 return True
             else:
                 return False
+    def copy_pass_to_clipboard(self, password): 
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(password)
+        r.update() # now it stays on the clipboard after the window is closed
+        r.destroy()  
           
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
@@ -203,7 +228,13 @@ class Vault(Frame):
         with open(password_file, "a") as myfile:        
             myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
             myfile.write(b'\n') 
-
+     
+    def add_username_url_password(self, url, username, password, password_file, account_file): 
+    self.line_count += 1
+    self.enc_and_add_password(password, password_file, self.derived_key)
+    with open(account_file, "a") as myfile:
+        myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+            
     def __init__(self, master):
         Frame.__init__(self, master)               
         self.master = master
