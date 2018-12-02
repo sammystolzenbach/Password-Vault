@@ -8,6 +8,7 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
 from Crypto.Util import Padding
 import re
+import pyperclip
 
 class Vault(Frame):
 
@@ -213,12 +214,8 @@ class Vault(Frame):
             else:
                 return False
     def copy_pass_to_clipboard(self, password): 
-        r = Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(password)
-        r.update() # now it stays on the clipboard after the window is closed
-        r.destroy()  
+        pyperclip.copy('The text to be copied to the clipboard.')
+        spam = pyperclip.paste()
           
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
