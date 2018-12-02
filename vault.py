@@ -7,6 +7,7 @@ from Crypto import Random
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
 from Crypto.Util import Padding
+from Crypto.Random import random
 import re
 
 class Vault(Frame):
@@ -125,7 +126,16 @@ class Vault(Frame):
                 self.attempts = self.attempts + 1
             else:
                 self.validated.set("Success")
-
+    
+    # TODO we gotta this!
+    def new_password(self, creating_new_password, new_password):
+        if(creating_new_password):
+            new_password = ""
+            for i in range(0, 24):
+                new_password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+            enc_and_add_password(new_password, self.password_file, self.derived_key)
+        else:
+            enc_and_add_password(new_password, self.password_file, self.derived_key)
 
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
