@@ -1,6 +1,5 @@
 #Vault program stub
 from tkinter import *
-#from PIL import ImageTk, Image
 import os
 import sys, getopt
 from Crypto.Cipher import AES
@@ -13,6 +12,9 @@ class Vault(Frame):
 
     #if program is already set up
     def start_screen(self):
+        self.parse_file("passwords.hex")
+        self.attempts = 0
+
         # start_screen GUI #
         self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
@@ -28,15 +30,11 @@ class Vault(Frame):
                                   show='*')
         self.password_box.bind('<Return>', self.login)
         self.password_box.pack(side=TOP)
-
         self.validated = StringVar()
         self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
                                   textvariable=self.validated, fg="white", 
                                   font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
-
-        self.parse_file("passwords.hex")
-
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -67,10 +65,33 @@ class Vault(Frame):
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
+    def main_screen(self):
+        self.frame = Frame(self.master, bg="#282828")
+        self.headLbl = Label(self.frame, bg="black", fg="white",
+                             text="Vault - Home", 
+                             font=("Courier New", 20))
+
+    def add_account_screen(self):
+        self.frame = Frame(self.master, bg="#282828")
+        self.headLbl = Label(self.frame, bg="black", fg="white",
+                             text="Vault - Add account", 
+                             font=("Courier New", 20))
+
+    def search_screen(self):
+        self.frame = Frame(self.master, bg="#282828")
+        self.headLbl = Label(self.frame, bg="black", fg="white",
+                             text="Vault - Home", 
+                             font=("Courier New", 20))
+
+    def strength_validated(self, password):
+        return True
+
+
     def password_setup(self, event):
         pass_1 = self.password_one.get()
         pass_2 = self.password_two.get()
 
+        # add a label for error message and for password strength
         if (pass_1 != pass_2):
             print("passwords don't match")
         else:
@@ -81,19 +102,18 @@ class Vault(Frame):
 
     def login(self, event):
         success = False
-        attempts = 0
         self.password_attempt = self.password_input.get()
+        print("attempts: ", self.attempts)
 
-        success = self.validate_login(self.password_attempt)
-    
-        if (attempts >= 3):
-            print("bro!!!!")
-
-        if (not success):
-            self.validated.set("Invalid password.")
-            attempts = attempts + 1
+        if (self.attempts >= 3):
+            self.validated.set("3 attempts exceeded. Account locked.")
         else:
-            self.validated.set("Success")
+            success = self.validate_login(self.password_attempt)
+            if (not success):
+                self.validated.set("Invalid password.")
+                self.attempts = self.attempts + 1
+            else:
+                self.validated.set("Success")
 
 
     def create_derived_key(self, master_pass, password_file):
@@ -121,20 +141,24 @@ class Vault(Frame):
         self.enc_master_pass = file_content[24:(24+AES.block_size)]
 
     def validate_login(self, password_input):
-        derived_key = PBKDF2(password_input, self.salt, count=1000)
-        iv_cipher = AES.new(derived_key, AES.MODE_ECB)
-        master_iv = iv_cipher.decrypt(self.enc_iv)
-        cipher = AES.new(derived_key, AES.MODE_CBC, master_iv)
+        self.derived_key = PBKDF2(password_input, self.salt, count=1000)
+        iv_cipher = AES.new(self.derived_key, AES.MODE_ECB)
+        self.master_iv = iv_cipher.decrypt(self.enc_iv)
+        cipher = AES.new(self.derived_key, AES.MODE_CBC, self.master_iv)
         padded_master_pass = cipher.decrypt(self.enc_master_pass)
-        master_pass = Padding.unpad(padded_master_pass, AES.block_size)
-        master_pass = master_pass.decode('ascii')
 
-        if(master_pass == password_input):
-            master_pass = "" # to reduce time master password is in memory
-            return True
-        else:
+        try:
+            master_pass = Padding.unpad(padded_master_pass, AES.block_size)
+        except ValueError:
             return False
-        
+        else:
+            master_pass = master_pass.decode('ascii')
+            if(master_pass == password_input):
+                master_pass = "" # to reduce time master password is in memory
+                return True
+            else:
+                return False
+          
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
         iv = Random.get_random_bytes(AES.block_size)
@@ -145,7 +169,6 @@ class Vault(Frame):
             myfile.write(b'\n') 
 
     def __init__(self, master):
-        # a test comment :)
         Frame.__init__(self, master)               
         self.master = master
         self.pack()
@@ -155,7 +178,6 @@ class Vault(Frame):
             self.start_screen()
         else:
             self.setup_screen()
-
  
 root = Tk()
 app = Vault(root)
