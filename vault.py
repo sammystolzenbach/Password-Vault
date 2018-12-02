@@ -70,6 +70,41 @@ class Vault(Frame):
         self.headLbl = Label(self.frame, bg="black", fg="white",
                              text="Vault - Home", 
                              font=("Courier New", 20))
+        self.headLbl.pack(side=TOP, fill=X)
+        self.frame.pack(expand=YES, fill=BOTH)
+        self.options_frame = Frame(self.frame, bg="#282828")
+        self.search_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search for an account password", fg="white",
+                                font=("Courier New", 18))
+        self.search_label.pack(side=TOP, fill=X)
+        self.username_input = StringVar()
+        self.url_input = StringVar()
+        self.username_input.set("")
+        self.url_input.set("")
+        self.username_search = Entry(self.options_frame, 
+                                     textvariable=self.username_input)
+        self.url_search = Entry(self.options_frame, textvariable=self.url_input)
+        self.username_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search by username", fg="white",
+                                font=("Courier New", 18))
+        self.username_label.pack(side=TOP)
+        self.username_label.pack(side=TOP)
+        self.username_search.bind('<Return>', self.search_by_username)
+        self.username_search.pack(side=TOP)
+        self.url_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search by URL", fg="white",
+                                font=("Courier New", 18))
+        self.url_label.pack(side=TOP)
+        self.url_search.bind('<Return>', self.search_by_url)
+        self.url_search.pack(side=TOP)
+        self.search_result = StringVar()
+        self.search_result.set("")
+        self.result_label = Label(self.options_frame, height=2, bg="#282828",
+                                  textvariable=self.search_result, fg="white", 
+                                  font=("Courier New", 18))
+        self.result_label.pack(side=TOP)
+        self.options_frame.pack(expand=YES, fill=BOTH, pady=100)
+
 
     def add_account_screen(self):
         self.frame = Frame(self.master, bg="#282828")
@@ -77,15 +112,14 @@ class Vault(Frame):
                              text="Vault - Add account", 
                              font=("Courier New", 20))
 
-    def search_screen(self):
-        self.frame = Frame(self.master, bg="#282828")
-        self.headLbl = Label(self.frame, bg="black", fg="white",
-                             text="Vault - Home", 
-                             font=("Courier New", 20))
-
     def strength_validated(self, password):
         return True
 
+    def search_by_username(self, event):
+        return "Username"
+
+    def search_by_url(self, event):
+        return "URL"
 
     def password_setup(self, event):
         pass_1 = self.password_one.get()
@@ -114,6 +148,8 @@ class Vault(Frame):
                 self.attempts = self.attempts + 1
             else:
                 self.validated.set("Success")
+                self.frame.destroy()
+                self.main_screen()
 
 
     def create_derived_key(self, master_pass, password_file):
