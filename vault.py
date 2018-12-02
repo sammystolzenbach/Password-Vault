@@ -9,6 +9,7 @@ from Crypto.Util import Counter
 from Crypto.Util import Padding
 from Crypto.Random import random
 import re
+import pyperclip
 
 class Vault(Frame):
 
@@ -65,6 +66,14 @@ class Vault(Frame):
                                    textvariable=self.password_two, show='*')
         self.password2_box.bind('<Return>', self.password_setup)
         self.password2_box.pack(side=TOP)
+
+        self.accepted = StringVar()
+        self.accepted.set("")
+        self.accepted_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                  textvariable=self.accepted, fg="white", 
+                                  font=("Courier New", 18))
+        self.accepted_label.pack(side=TOP)
+        self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -73,6 +82,41 @@ class Vault(Frame):
         self.headLbl = Label(self.frame, bg="black", fg="white",
                              text="Vault - Home", 
                              font=("Courier New", 20))
+        self.headLbl.pack(side=TOP, fill=X)
+        self.frame.pack(expand=YES, fill=BOTH)
+        self.options_frame = Frame(self.frame, bg="#282828")
+        self.search_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search for an account password", fg="white",
+                                font=("Courier New", 18))
+        self.search_label.pack(side=TOP, fill=X)
+        self.username_input = StringVar()
+        self.url_input = StringVar()
+        self.username_input.set("")
+        self.url_input.set("")
+        self.username_search = Entry(self.options_frame, 
+                                     textvariable=self.username_input)
+        self.url_search = Entry(self.options_frame, textvariable=self.url_input)
+        self.username_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search by username", fg="white",
+                                font=("Courier New", 18))
+        self.username_label.pack(side=TOP)
+        self.username_label.pack(side=TOP)
+        self.username_search.bind('<Return>', self.search_by_username)
+        self.username_search.pack(side=TOP)
+        self.url_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Search by URL", fg="white",
+                                font=("Courier New", 18))
+        self.url_label.pack(side=TOP)
+        self.url_search.bind('<Return>', self.search_by_url)
+        self.url_search.pack(side=TOP)
+        self.search_result = StringVar()
+        self.search_result.set("")
+        self.result_label = Label(self.options_frame, height=2, bg="#282828",
+                                  textvariable=self.search_result, fg="white", 
+                                  font=("Courier New", 18))
+        self.result_label.pack(side=TOP)
+        self.options_frame.pack(expand=YES, fill=BOTH, pady=100)
+
 
     def add_account_screen(self):
         self.frame = Frame(self.master, bg="#282828")
@@ -80,24 +124,23 @@ class Vault(Frame):
                              text="Vault - Add account", 
                              font=("Courier New", 20))
 
-    def search_screen(self):
-        self.frame = Frame(self.master, bg="#282828")
-        self.headLbl = Label(self.frame, bg="black", fg="white",
-                             text="Vault - Home", 
-                             font=("Courier New", 20))
-
     def strength_validated(self, password):
-        if re.match(r'!@#%&*()_~?><{}[]^\w+$', password):
+        if re.match(r'!@#%&*()_~?><{}^+$', password):
             if len(password) > 11 and len(password < 33):
                 if re.match(r'1234567890'):
-                    print('Success')
+                    return "Success"
                 else:
-                    print('Password must have at least 1 number')
+                    return "Password must have at least 1 number"
             else:
-                print('Password must be between 12 and 32 characters')
+                return "Password must be between 12 and 32 characters"
         else:
-            print('Password must have at least 1 special character')
+            return "Password must have at least 1 special character"
 
+    def search_by_username(self, event):
+        return "Username"
+
+    def search_by_url(self, event):
+        return "URL"
 
     def password_setup(self, event):
         pass_1 = self.password_one.get()
@@ -105,12 +148,16 @@ class Vault(Frame):
 
         # add a label for error message and for password strength
         if (pass_1 != pass_2):
-            print("passwords don't match")
+            self.accepted.set("Passwords don't match")
+            return
         else:
-            print("passwords match!")
-            self.create_derived_key(pass_2, "passwords.hex")
-            self.frame.destroy()
-            self.start_screen()
+            result = self.strength_validated(pass_2)
+            if result == "Success":
+                self.create_derived_key(pass_2, "passwords.hex")
+                self.frame.destroy()
+                self.start_screen()
+            else:
+                self.accepted.set(result)
 
     def login(self, event):
         success = False
@@ -126,16 +173,9 @@ class Vault(Frame):
                 self.attempts = self.attempts + 1
             else:
                 self.validated.set("Success")
-    
-    # TODO we gotta this!
-    def new_password(self, creating_new_password, new_password):
-        if(creating_new_password):
-            new_password = ""
-            for i in range(0, 24):
-                new_password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
-            enc_and_add_password(new_password, self.password_file, self.derived_key)
-        else:
-            enc_and_add_password(new_password, self.password_file, self.derived_key)
+                self.frame.destroy()
+                self.main_screen()
+
 
     def create_derived_key(self, master_pass, password_file):
         master_pass = master_pass.encode('utf-8')   #MAY NEED DIFFERENT ENCODING .hex()
@@ -186,13 +226,11 @@ class Vault(Frame):
                 return True
             else:
                 return False
+
+
     def copy_pass_to_clipboard(self, password): 
-        r = Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(password)
-        r.update() # now it stays on the clipboard after the window is closed
-        r.destroy()  
+        pyperclip.copy('The text to be copied to the clipboard.')
+        spam = pyperclip.paste()
           
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
@@ -204,10 +242,20 @@ class Vault(Frame):
             myfile.write(b'\n') 
      
     def add_username_url_password(self, url, username, password, password_file, account_file): 
-    self.line_count += 1
-    self.enc_and_add_password(password, password_file, self.derived_key)
-    with open(account_file, "a") as myfile:
-        myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+        self.line_count += 1
+        self.enc_and_add_password(password, password_file, self.derived_key)
+        with open(account_file, "a") as myfile:
+            myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+
+     # TODO we gotta this!
+    def new_password(self, creating_new_password, new_password):
+        if(creating_new_password):
+            new_password = ""
+            for i in range(0, 24):
+                new_password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+            enc_and_add_password(new_password, self.password_file, self.derived_key)
+        else:
+            enc_and_add_password(new_password, self.password_file, self.derived_key)
             
     def __init__(self, master):
         Frame.__init__(self, master)               
