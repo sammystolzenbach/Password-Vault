@@ -127,7 +127,11 @@ class Vault(Frame):
         iv_cipher = AES.new(derived_key, AES.MODE_ECB)
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
-        ofile.write(salt + enc_master_iv + enc_padded_master_pass)     #write out to file
+        length_enc_padded_master_pass = len(enc_padded_master_pass).to_bytes(2, 'big')
+
+        print("length of encrypted master pass", len(enc_padded_master_pass))
+        print(length_enc_padded_master_pass)
+        ofile.write(salt + enc_master_iv + length_enc_padded_master_pass + enc_padded_master_pass)     #write out to file
         ofile.write(b'\n')
         ofile.close()
     #** Make sure plaintext of master password not in memory for
@@ -138,7 +142,10 @@ class Vault(Frame):
         file_content = ifile.read()
         self.salt = file_content[:8]
         self.enc_iv = file_content[8:24]
-        self.enc_master_pass = file_content[24:(24+AES.block_size)]
+        # update this basedon len(enc padded master pass)
+        length_enc_padded_master_pass = int.from_bytes(file_content[24:26], byteorder='big')
+        print("in parse file", length_enc_padded_master_pass)
+        self.enc_master_pass = file_content[26:(26+length_enc_padded_master_pass)]
 
     def validate_login(self, password_input):
         self.derived_key = PBKDF2(password_input, self.salt, count=1000)
