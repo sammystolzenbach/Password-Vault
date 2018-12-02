@@ -65,6 +65,14 @@ class Vault(Frame):
                                    textvariable=self.password_two, show='*')
         self.password2_box.bind('<Return>', self.password_setup)
         self.password2_box.pack(side=TOP)
+
+        self.accepted = StringVar()
+        self.accepted.set("")
+        self.accepted_label = Label(self.pswd_frame, height=2, bg="#282828",
+                                  textvariable=self.accepted, fg="white", 
+                                  font=("Courier New", 18))
+        self.accepted_label.pack(side=TOP)
+        self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
         self.frame.pack(expand=YES, fill=BOTH)
 
@@ -116,16 +124,16 @@ class Vault(Frame):
                              font=("Courier New", 20))
 
     def strength_validated(self, password):
-        if re.match(r'!@#%&*()_~?><{}[]^\w+$', password):
+        if re.match(r'!@#%&*()_~?><{}^+$', password):
             if len(password) > 11 and len(password < 33):
                 if re.match(r'1234567890'):
-                    print('Success')
+                    return "Success"
                 else:
-                    print('Password must have at least 1 number')
+                    return "Password must have at least 1 number"
             else:
-                print('Password must be between 12 and 32 characters')
+                return "Password must be between 12 and 32 characters"
         else:
-            print('Password must have at least 1 special character')
+            return "Password must have at least 1 special character"
 
     def search_by_username(self, event):
         return "Username"
@@ -139,12 +147,16 @@ class Vault(Frame):
 
         # add a label for error message and for password strength
         if (pass_1 != pass_2):
-            print("passwords don't match")
+            self.accepted.set("Passwords don't match")
+            return
         else:
-            print("passwords match!")
-            self.create_derived_key(pass_2, "passwords.hex")
-            self.frame.destroy()
-            self.start_screen()
+            result = self.strength_validated(pass_2)
+            if result == "Success":
+                self.create_derived_key(pass_2, "passwords.hex")
+                self.frame.destroy()
+                self.start_screen()
+            else:
+                self.accepted.set(result)
 
     def login(self, event):
         success = False
@@ -213,6 +225,8 @@ class Vault(Frame):
                 return True
             else:
                 return False
+
+
     def copy_pass_to_clipboard(self, password): 
         pyperclip.copy('The text to be copied to the clipboard.')
         spam = pyperclip.paste()
