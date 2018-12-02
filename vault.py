@@ -8,7 +8,7 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util import Counter
 from Crypto.Util import Padding
 import re
-import pyperclip
+
 
 class Vault(Frame):
 
@@ -70,7 +70,7 @@ class Vault(Frame):
         self.accepted.set("")
         self.accepted_label = Label(self.pswd_frame, height=2, bg="#282828",
                                   textvariable=self.accepted, fg="white", 
-                                  font=("Courier New", 18))
+                                  font=("Courier New", 15))
         self.accepted_label.pack(side=TOP)
         self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
@@ -124,9 +124,11 @@ class Vault(Frame):
                              font=("Courier New", 20))
 
     def strength_validated(self, password):
-        if re.match(r'!@#%&*()_~?><{}^+$', password):
-            if len(password) > 11 and len(password < 33):
-                if re.match(r'1234567890'):
+        print(password)
+        SpecialSym = ['$','@','#','!','%','^','*','(',')','+','-','[',']']
+        if any(char in SpecialSym for char in password):
+            if len(password) > 11 and len(password) < 33:
+                if re.search(r'[0-9]', password):
                     return "Success"
                 else:
                     return "Password must have at least 1 number"
@@ -227,10 +229,6 @@ class Vault(Frame):
                 return False
 
 
-    def copy_pass_to_clipboard(self, password): 
-        pyperclip.copy('The text to be copied to the clipboard.')
-        spam = pyperclip.paste()
-          
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
         iv = Random.get_random_bytes(AES.block_size)
