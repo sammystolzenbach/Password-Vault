@@ -11,6 +11,7 @@ from Crypto.Random import random
 import re
 import subprocess
 
+
 class Vault(Frame):
 
     #if program is already set up
@@ -19,7 +20,7 @@ class Vault(Frame):
         self.line_count = 0
         self.attempts = 0
 
-        # start_screen GUI #
+        #start_screen GUI#
         self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
                              bg="black", fg="white", font=("Courier New", 20))
@@ -36,7 +37,7 @@ class Vault(Frame):
         self.password_box.pack(side=TOP)
         self.validated = StringVar()
         self.repeat_label = Label(self.pswd_frame, height=2, bg="#282828",
-                                  textvariable=self.validated, fg="white", 
+                                  textvariable=self.validated, fg="light blue", 
                                   font=("Courier New", 18))
         self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
@@ -70,8 +71,8 @@ class Vault(Frame):
         self.accepted = StringVar()
         self.accepted.set("")
         self.accepted_label = Label(self.pswd_frame, height=2, bg="#282828",
-                                  textvariable=self.accepted, fg="white", 
-                                  font=("Courier New", 15))
+                                    textvariable=self.accepted, fg="light blue", 
+                                    font=("Courier New", 15))
         self.accepted_label.pack(side=TOP)
         self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
@@ -115,14 +116,99 @@ class Vault(Frame):
                                   textvariable=self.search_result, fg="white", 
                                   font=("Courier New", 18))
         self.result_label.pack(side=TOP)
-        self.options_frame.pack(expand=YES, fill=BOTH, pady=100)
+        self.options_frame.pack(expand=YES, fill=BOTH, pady=70)
+        self.add_account_button = Button(self.options_frame, height=2, bg="#282828",
+                                text="Add an account", fg="white", highlightbackground="#282828",
+                                font=("Courier New", 18), command=self.add_account_screen)
+        self.add_account_button.pack(side=TOP)
 
-
+    ##add different frames for each field :(
     def add_account_screen(self):
+        self.frame.destroy()
         self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, bg="black", fg="white",
                              text="Vault - Add account", 
                              font=("Courier New", 20))
+
+        self.headLbl.pack(side=TOP, fill=X)
+        self.frame.pack(expand=YES, fill=BOTH)
+        self.options_frame = Frame(self.frame, bg="#282828")
+        self.new_account_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="New Account Information", fg="white",
+                                font=("Courier New", 20))
+
+        # new username and URL entry
+        self.new_account_label.pack(side=TOP, fill=X)
+        self.new_username = StringVar()
+        self.new_url = StringVar()
+        self.new_username.set("")
+        self.new_username.set("")
+        self.new_user = Entry(self.options_frame, 
+                                     textvariable=self.new_username)
+        self.new_url_entry = Entry(self.options_frame, textvariable=self.new_url)
+        self.new_user_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="Username", fg="white",
+                                font=("Courier New", 18))
+        self.new_user_label.pack(side=TOP)
+        self.new_user.pack(side=TOP)
+        self.new_url_label = Label(self.options_frame, height=2, bg="#282828",
+                                text="URL [ex: gmail.com]", fg="white",
+                                font=("Courier New", 18))
+        self.new_url_label.pack(side=TOP)
+        self.new_url_entry.pack(side=TOP)
+
+        # new password entry - generate or enter #
+        self.password_frame = Frame(self.options_frame, bg="#282828")
+        self.password_frame.pack(expand=YES, fill=BOTH)
+        self.new_password = StringVar()
+        self.new_password.set("")
+        self.new_password = Entry(self.password_frame, 
+                                     textvariable=self.new_password, show="*")
+        self.new_pass_label = Label(self.password_frame, height=2, bg="#282828",
+                                text="Enter new password", fg="white",
+                                font=("Courier New", 18))
+        self.new_pass_label.pack(side=TOP)
+        self.new_password.pack(side=TOP)
+
+        self.add_account_button = Button(self.options_frame, text="Add account",
+                                font=("Courier New", 18), command=self.new_account_entries,
+                                highlightbackground="#282828")
+
+        self.add_account_button.pack(side=TOP, pady=10)
+        # new account entry result
+        self.add_result = StringVar()
+        self.add_result.set("")
+        self.result_label = Label(self.options_frame, height=2, bg="#282828",
+                                  textvariable=self.add_result, fg="light blue", 
+                                  font=("Courier New", 18))
+        self.result_label.pack(side=TOP)
+        self.back_home_button = Button(self.options_frame, height=1, bg="#282828",
+                                text="Back home", fg="white",highlightbackground="#282828",
+                                font=("Courier New", 18), command=self.go_home)
+        self.back_home_button.pack(side=TOP, pady=5)
+
+        self.options_frame.pack(expand=YES, fill=BOTH, pady=20)
+
+    def go_home(self):
+        self.frame.destroy()
+        self.main_screen()
+
+    def new_account_entries(self):
+        new_usr = self.new_username.get()
+        new_url = self.new_url.get()
+        new_pass = self.new_password.get()
+        
+        if new_usr == "":
+            self.add_result.set("Please add a username")
+        elif new_url == "":
+            self.add_result.set("Please add a URL")
+        elif new_pass == "":
+            self.add_result.set("Please add a password")
+        else:
+            self.add_result.set("New account added.")
+            self.add_username_url_password(new_url, new_usr, new_pass,
+                                           "passwords.hex", "accounts.txt")
+
 
     def strength_validated(self, password):
         print(password)
@@ -261,6 +347,7 @@ class Vault(Frame):
         else:
             enc_and_add_password(new_password, self.password_file, self.derived_key)
 
+
     def search_username_or_url(self, username_file, username, url, password_file):
         account_line_num = 1
         ifile = open(username_file, 'r')
@@ -281,7 +368,6 @@ class Vault(Frame):
         Frame.__init__(self, master)               
         self.master = master
         self.pack()
-
         #check if setup is needed
         if (os.path.isfile("./passwords.hex")):
             self.start_screen()
@@ -293,6 +379,7 @@ app = Vault(root)
 root.title("Password Manager")
 root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
+root.configure(bg="#282828")
 root.mainloop()
 
 
@@ -326,4 +413,6 @@ root.mainloop()
         Create new account (enter username, url, password)
         Create new password for account
         Search for account password
+<<<<<<< HEAD
             - copy to clipboard '''
+
