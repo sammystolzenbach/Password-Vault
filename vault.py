@@ -199,7 +199,7 @@ class Vault(Frame):
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
-
+    
     def parse_file(self, password_file):
         ifile = open(password_file, 'rb')
         file_content = ifile.read()
