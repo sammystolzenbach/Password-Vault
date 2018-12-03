@@ -275,7 +275,7 @@ class Vault(Frame):
         ifile = open(password_file, 'rb')
         for line in ifile:
             if account_line_num == password_line_num:
-                copy_pass_to_clipboard(line)
+                copy_pass_to_clipboard(line[32:])
 
     def __init__(self, master):
         Frame.__init__(self, master)               
