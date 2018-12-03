@@ -294,7 +294,7 @@ class Vault(Frame):
         ofile.close()
     #** Make sure plaintext of master password not in memory for
     #too long!! **
-
+    
     def parse_file(self, password_file):
         ifile = open(password_file, 'rb')
         file_content = ifile.read()
@@ -332,11 +332,12 @@ class Vault(Frame):
         retcode = p.wait()
 
     def enc_and_add_password(self, new_password, password_file, derived_key):
+        new_password = new_password.encode('utf-8')
         padded_new_password = Padding.pad(new_password, AES.block_size)     
         iv = Random.get_random_bytes(AES.block_size)
         cipher = AES.new(derived_key, AES.MODE_CBC, iv)
         enc_padded_new_password = cipher.encrypt(padded_new_password)
-        with open(password_file, "a") as myfile:        
+        with open(password_file, "ab") as myfile:        
             myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
             myfile.write(b'\n') 
      
@@ -344,7 +345,7 @@ class Vault(Frame):
         self.line_count += 1
         self.enc_and_add_password(password, password_file, self.derived_key)
         with open(account_file, "a") as myfile:
-            myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+            myfile.write(str(self.line_count)+" USERNAME:"+username+" | URL:"+url)
 
     def gen_new_password(self):
         password = ""
@@ -385,3 +386,10 @@ root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.configure(bg="#282828")
 root.mainloop()
+
+
+# Things to do:
+    # Debug
+    # Make add account button text more contrasting
+    # Email
+
