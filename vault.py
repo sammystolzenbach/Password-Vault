@@ -415,7 +415,4 @@ root.mainloop()
         Search for account password
 <<<<<<< HEAD
             - copy to clipboard '''
-#Roar521380!Roar521380!
-=======
-            - copy to clipboard '''
->>>>>>> 9804c5b4f266629da4996346a4465c4838dce67f
+
