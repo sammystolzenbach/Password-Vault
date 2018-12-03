@@ -9,6 +9,7 @@ from Crypto.Util import Counter
 from Crypto.Util import Padding
 from Crypto.Random import random
 import re
+import subprocess
 
 
 class Vault(Frame):
@@ -70,8 +71,8 @@ class Vault(Frame):
         self.accepted = StringVar()
         self.accepted.set("")
         self.accepted_label = Label(self.pswd_frame, height=2, bg="#282828",
-                                  textvariable=self.accepted, fg="light blue", 
-                                  font=("Courier New", 15))
+                                    textvariable=self.accepted, fg="light blue", 
+                                    font=("Courier New", 15))
         self.accepted_label.pack(side=TOP)
         self.repeat_label.pack(side=TOP)
         self.pswd_frame.pack(expand=YES, fill=BOTH, pady=100)
@@ -313,6 +314,13 @@ class Vault(Frame):
                 return True
             else:
                 return False
+            
+    def copy_pass_to_clipboard(self, password):
+        #password = password.encode('utf-8') 
+        p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
+        p.stdin.write(password)
+        p.stdin.close()
+        retcode = p.wait()
 
     def enc_and_add_password(self, new_password, password_file, derived_key):
         padded_new_password = Padding.pad(new_password, AES.block_size)     
@@ -338,7 +346,24 @@ class Vault(Frame):
             enc_and_add_password(new_password, self.password_file, self.derived_key)
         else:
             enc_and_add_password(new_password, self.password_file, self.derived_key)
-            
+
+
+    def search_username_or_url(self, username_file, username, url, password_file):
+        account_line_num = 1
+        ifile = open(username_file, 'r')
+        for line in ifile:
+            if username not in line or url not in line:
+                account_line_num += 1
+            else: 
+                return copy_searched_password_to_clipboard(account_line_num, password_file)
+
+    def copy_searched_password_to_clipboard(self, account_line_num, password_file):
+        password_line_num = 0
+        ifile = open(password_file, 'rb')
+        for line in ifile:
+            if account_line_num == password_line_num:
+                copy_pass_to_clipboard(line[32:])
+
     def __init__(self, master):
         Frame.__init__(self, master)               
         self.master = master
@@ -371,11 +396,9 @@ root.mainloop()
             write out to file
             ** Make sure plaintext of master password not in memory for
                 too long!! **
-
         Function:
             reads in and parses encrypted file so that we have
             the salt, the iv, and the stored ENC master password
-
     Program start:
         Function:
             Takes in password
@@ -384,13 +407,15 @@ root.mainloop()
             Uses IV and P to decrypt master password with AES_CBC
             Sees if password = master password
         Repeat if wrong, if rejected 3 times, send email?
-
         Function:
             Opens the program window for searching/adding new things
-
     Program options:
         Create new account (enter username, url, password)
         Create new password for account
         Search for account password
+<<<<<<< HEAD
             - copy to clipboard '''
 #Roar521380!Roar521380!
+=======
+            - copy to clipboard '''
+>>>>>>> 9804c5b4f266629da4996346a4465c4838dce67f
