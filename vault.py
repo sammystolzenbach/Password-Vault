@@ -98,14 +98,14 @@ class Vault(Frame):
                                      textvariable=self.username_input)
         self.url_search = Entry(self.options_frame, textvariable=self.url_input)
         self.username_label = Label(self.options_frame, height=2, bg="#282828",
-                                text="Search by username", fg="white",
+                                text="Search by username", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.username_label.pack(side=TOP)
         self.username_label.pack(side=TOP)
         self.username_search.bind('<Return>', self.search_by_username)
         self.username_search.pack(side=TOP)
         self.url_label = Label(self.options_frame, height=2, bg="#282828",
-                                text="Search by URL", fg="white",
+                                text="Search by URL", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.url_label.pack(side=TOP)
         self.url_search.bind('<Return>', self.search_by_url)
@@ -113,12 +113,12 @@ class Vault(Frame):
         self.search_result = StringVar()
         self.search_result.set("")
         self.result_label = Label(self.options_frame, height=2, bg="#282828",
-                                  textvariable=self.search_result, fg="white", 
+                                  textvariable=self.search_result, fg="light blue", 
                                   font=("Courier New", 18))
         self.result_label.pack(side=TOP)
         self.options_frame.pack(expand=YES, fill=BOTH, pady=70)
         self.add_account_button = Button(self.options_frame, height=2, bg="#282828",
-                                text="Add an account", fg="white", highlightbackground="#282828",
+                                text="Add an account", fg="black", highlightbackground="#282828",
                                 font=("Courier New", 18), command=self.add_account_screen)
         self.add_account_button.pack(side=TOP)
 
@@ -147,12 +147,12 @@ class Vault(Frame):
                                      textvariable=self.new_username)
         self.new_url_entry = Entry(self.options_frame, textvariable=self.new_url)
         self.new_user_label = Label(self.options_frame, height=2, bg="#282828",
-                                text="Username", fg="white",
+                                text="Username", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.new_user_label.pack(side=TOP)
         self.new_user.pack(side=TOP)
         self.new_url_label = Label(self.options_frame, height=2, bg="#282828",
-                                text="URL [ex: gmail.com]", fg="white",
+                                text="URL [ex: gmail.com]", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.new_url_label.pack(side=TOP)
         self.new_url_entry.pack(side=TOP)
@@ -165,14 +165,20 @@ class Vault(Frame):
         self.new_password = Entry(self.password_frame, 
                                      textvariable=self.new_password, show="*")
         self.new_pass_label = Label(self.password_frame, height=2, bg="#282828",
-                                text="Enter new password", fg="white",
+                                text="Enter new password", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.new_pass_label.pack(side=TOP)
         self.new_password.pack(side=TOP)
 
+        self.gen_password = Button(self.password_frame, text="Generate password",
+                                font=("Courier New", 18), command=self.gen_new_password,
+                                highlightbackground="#282828", fg="black")
+        self.gen_password.pack(side=TOP)
+
+
         self.add_account_button = Button(self.options_frame, text="Add account",
                                 font=("Courier New", 18), command=self.new_account_entries,
-                                highlightbackground="#282828")
+                                highlightbackground="#282828", fg="black")
 
         self.add_account_button.pack(side=TOP, pady=10)
         # new account entry result
@@ -183,9 +189,9 @@ class Vault(Frame):
                                   font=("Courier New", 18))
         self.result_label.pack(side=TOP)
         self.back_home_button = Button(self.options_frame, height=1, bg="#282828",
-                                text="Back home", fg="white",highlightbackground="#282828",
+                                text="Back home", fg="black",highlightbackground="#282828",
                                 font=("Courier New", 18), command=self.go_home)
-        self.back_home_button.pack(side=TOP, pady=5)
+        self.back_home_button.pack(side=BOTTOM, pady=5)
 
         self.options_frame.pack(expand=YES, fill=BOTH, pady=20)
 
@@ -206,9 +212,12 @@ class Vault(Frame):
             self.add_result.set("Please add a password")
         else:
             self.add_result.set("New account added.")
+            self.new_password.delete(0, END)
+            self.new_url_entry.delete(0, END)
+            self.new_user.delete(0, END)
+            print(new_url, new_usr, new_pass)
             self.add_username_url_password(new_url, new_usr, new_pass,
                                            "passwords.hex", "accounts.txt")
-
 
     def strength_validated(self, password):
         print(password)
@@ -337,16 +346,11 @@ class Vault(Frame):
         with open(account_file, "a") as myfile:
             myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
 
-     # TODO we test gotta this!
-    def new_password(self, creating_new_password, new_password):
-        if(creating_new_password):
-            new_password = ""
-            for i in range(0, 24):
-                new_password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
-            enc_and_add_password(new_password, self.password_file, self.derived_key)
-        else:
-            enc_and_add_password(new_password, self.password_file, self.derived_key)
-
+    def gen_new_password(self):
+        password = ""
+        for i in range(0, 24):
+            password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+        self.new_password.insert(0,password)
 
     def search_username_or_url(self, username_file, username, url, password_file):
         account_line_num = 1
@@ -381,38 +385,3 @@ root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.configure(bg="#282828")
 root.mainloop()
-
-
-'''    Program setup:
-        - Detect if theres a current encrypted password file, if so, move on
-        Function: 
-            Takes in the user's new master password with restrictions
-            Read and validate
-        Function:
-            Create random salt
-            Make a random IV
-            use PBKDFS with salt to make master password to derived key
-            Encrypt master password and IV with ECB
-            write out to file
-            ** Make sure plaintext of master password not in memory for
-                too long!! **
-        Function:
-            reads in and parses encrypted file so that we have
-            the salt, the iv, and the stored ENC master password
-    Program start:
-        Function:
-            Takes in password
-            Uses salt to generate derived key P
-            Uses derived password P to decrypt IV with AES_ECB
-            Uses IV and P to decrypt master password with AES_CBC
-            Sees if password = master password
-        Repeat if wrong, if rejected 3 times, send email?
-        Function:
-            Opens the program window for searching/adding new things
-    Program options:
-        Create new account (enter username, url, password)
-        Create new password for account
-        Search for account password
-<<<<<<< HEAD
-            - copy to clipboard '''
-
