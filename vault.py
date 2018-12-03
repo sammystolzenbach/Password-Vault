@@ -323,11 +323,12 @@ class Vault(Frame):
         retcode = p.wait()
 
     def enc_and_add_password(self, new_password, password_file, derived_key):
+        new_password = new_password.encode('utf-8')
         padded_new_password = Padding.pad(new_password, AES.block_size)     
         iv = Random.get_random_bytes(AES.block_size)
         cipher = AES.new(derived_key, AES.MODE_CBC, iv)
         enc_padded_new_password = cipher.encrypt(padded_new_password)
-        with open(password_file, "a") as myfile:        
+        with open(password_file, "ab") as myfile:        
             myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
             myfile.write(b'\n') 
      
@@ -335,7 +336,7 @@ class Vault(Frame):
         self.line_count += 1
         self.enc_and_add_password(password, password_file, self.derived_key)
         with open(account_file, "a") as myfile:
-            myfile.write(self.line_count+" USERNAME:"+username+" | URL:"+url)
+            myfile.write(str(self.line_count)+" USERNAME:"+username+" | URL:"+url)
 
      # TODO we test gotta this!
     def new_password(self, creating_new_password, new_password):
@@ -382,37 +383,7 @@ root.maxsize(width=500, height=500)
 root.configure(bg="#282828")
 root.mainloop()
 
-
-'''    Program setup:
-        - Detect if theres a current encrypted password file, if so, move on
-        Function: 
-            Takes in the user's new master password with restrictions
-            Read and validate
-        Function:
-            Create random salt
-            Make a random IV
-            use PBKDFS with salt to make master password to derived key
-            Encrypt master password and IV with ECB
-            write out to file
-            ** Make sure plaintext of master password not in memory for
-                too long!! **
-        Function:
-            reads in and parses encrypted file so that we have
-            the salt, the iv, and the stored ENC master password
-    Program start:
-        Function:
-            Takes in password
-            Uses salt to generate derived key P
-            Uses derived password P to decrypt IV with AES_ECB
-            Uses IV and P to decrypt master password with AES_CBC
-            Sees if password = master password
-        Repeat if wrong, if rejected 3 times, send email?
-        Function:
-            Opens the program window for searching/adding new things
-    Program options:
-        Create new account (enter username, url, password)
-        Create new password for account
-        Search for account password
-<<<<<<< HEAD
-            - copy to clipboard '''
-
+# Things to do:
+    # Debug
+    # Make add account button text more contrasting
+    # Email
