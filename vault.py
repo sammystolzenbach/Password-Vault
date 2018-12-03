@@ -230,7 +230,7 @@ class Vault(Frame):
                 return False
             
     def copy_pass_to_clipboard(self, password):
-        password = password.encode('utf-8') 
+        #password = password.encode('utf-8') 
         p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
         p.stdin.write(password)
         p.stdin.close()
@@ -268,14 +268,14 @@ class Vault(Frame):
             if username not in line or url not in line:
                 account_line_num += 1
             else: 
-                return return_searched_password(account_line_num, password_file)
+                return copy_searched_password_to_clipboard(account_line_num, password_file)
 
-    def return_searched_password(self, account_line_num, password_file):
+    def copy_searched_password_to_clipboard(self, account_line_num, password_file):
         password_line_num = 0
         ifile = open(password_file, 'rb')
         for line in ifile:
             if account_line_num == password_line_num:
-                return line
+                copy_pass_to_clipboard(line)
 
     def __init__(self, master):
         Frame.__init__(self, master)               
