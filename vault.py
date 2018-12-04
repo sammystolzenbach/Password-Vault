@@ -385,11 +385,15 @@ class Vault(Frame):
         print("in password file")
         for line in ifile:
             if account_line_num == password_line_num:
-                print("found in line", password_line_num)
-                return self.copy_pass_to_clipboard(line[32:])
+                print("password found in line", password_line_num)
+                cipher = AES.new(self.derived_key, AES.MODE_CBC, line[:32])
+                plaintext_password = cipher.decrypt(line[32:])
+                return copy_pass_to_clipboard(plaintext_password)
             else:
                 password_line_num += 1
         return "Error"
+
+
 
     def __init__(self, master):
         Frame.__init__(self, master)               
