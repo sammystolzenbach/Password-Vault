@@ -367,7 +367,9 @@ class Vault(Frame):
         ifile = open(password_file, 'rb')
         for line in ifile:
             if account_line_num == password_line_num:
-                copy_pass_to_clipboard(line[32:])
+                cipher = AES.new(self.derived_key, AES.MODE_CBC, line[:32])
+                plaintext_password = cipher.decrypt(line[32:])
+                copy_pass_to_clipboard(plaintext_password)
 
     def __init__(self, master):
         Frame.__init__(self, master)               
