@@ -1,1 +1,2 @@
-1 USERNAME:peter | URL:gmail.com
+1 USERNAME:peter | URL:gmail
+2 USERNAME:sammy | URL:yahoo

@@ -357,6 +357,7 @@ class Vault(Frame):
         self.enc_and_add_password(password, password_file, self.derived_key)
         with open(account_file, "a") as myfile:
             myfile.write(str(self.line_count)+" USERNAME:"+username+" | URL:"+url)
+            myfile.write('\n')
 
     def gen_new_password(self):
         password = ""
@@ -383,11 +384,14 @@ class Vault(Frame):
         ifile = open(password_file, 'rb')
         print("in password file")
         for line in ifile:
+            print("pass length: ")
+            print(len(line[16:]))
             if account_line_num == password_line_num:
                 print("password found in line", password_line_num)
-                cipher = AES.new(self.derived_key, AES.MODE_CBC, line[:32])
-                plaintext_password = cipher.decrypt(line[32:])
-                return copy_pass_to_clipboard(plaintext_password)
+                cipher = AES.new(self.derived_key, AES.MODE_CBC, line[:16])
+                plaintext_password = cipher.decrypt(line[16:-1])
+                plaintext_password = Padding.unpad(plaintext_password, AES.block_size)
+                return self.copy_pass_to_clipboard(plaintext_password)
             else:
                 password_line_num += 1
         return "Error"
@@ -408,10 +412,3 @@ root.minsize(width=500, height=500)
 root.maxsize(width=500, height=500)
 root.configure(bg="#282828")
 root.mainloop()
-
-
-# Things to do:
-    # Debug
-    # Make add account button text more contrasting
-    # Email
-
