@@ -182,7 +182,6 @@ class Vault(Frame):
         self.add_account_button = Button(self.options_frame, text="Add account",
                                 font=("Courier New", 18), command=self.new_account_entries,
                                 highlightbackground="#282828", fg="black")
-
         self.add_account_button.pack(side=TOP, pady=10)
         # new account entry result
         self.add_result = StringVar()
@@ -392,8 +391,6 @@ class Vault(Frame):
             else:
                 password_line_num += 1
         return "Error"
-
-
 
     def __init__(self, master):
         Frame.__init__(self, master)               
