@@ -400,7 +400,6 @@ class Vault(Frame):
             self.start_screen()
         else:
             self.setup_screen()
- 
 root = Tk()
 app = Vault(root)
 root.title("Password Manager")
