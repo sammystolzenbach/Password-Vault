@@ -101,15 +101,18 @@ class Vault(Frame):
                                 text="Search by username", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.username_label.pack(side=TOP)
-        self.username_label.pack(side=TOP)
-        self.username_search.bind('<Return>', self.search_by_username)
         self.username_search.pack(side=TOP)
         self.url_label = Label(self.options_frame, height=2, bg="#282828",
                                 text="Search by URL", fg="#F0F0F0",
                                 font=("Courier New", 18))
         self.url_label.pack(side=TOP)
-        self.url_search.bind('<Return>', self.search_by_url)
         self.url_search.pack(side=TOP)
+
+        self.search_button = Button(self.options_frame, height=2, bg="#282828",
+                                text="Retrieve Password", fg="black", highlightbackground="#282828",
+                                font=("Courier New", 18), command=self.search_for_password)
+        self.search_button.pack(side=TOP)
+
         self.search_result = StringVar()
         self.search_result.set("")
         self.result_label = Label(self.options_frame, height=2, bg="#282828",
@@ -233,12 +236,6 @@ class Vault(Frame):
         else:
             return "Password must have at least 1 special character"
 
-    def search_by_username(self, event):
-        return "Username"
-
-    def search_by_url(self, event):
-        return "URL"
-
     def password_setup(self, event):
         pass_1 = self.password_one.get()
         pass_2 = self.password_two.get()
@@ -272,6 +269,19 @@ class Vault(Frame):
                 self.validated.set("Success")
                 self.frame.destroy()
                 self.main_screen()
+
+    def search_for_password(self):
+        username = self.username_input.get()
+        url = self.url_input.get()
+
+        if username == "":
+            self.search_result.set("Please enter the username")
+        elif url == "":
+            self.search_result.set("Please enter the URL")
+        else:
+            print("calling search username/url")
+            result = self.search_username_or_url("accounts.txt", username, url, "passwords.hex")
+            self.search_result.set(result)
 
 
     def create_derived_key(self, master_pass, password_file):
@@ -326,10 +336,12 @@ class Vault(Frame):
             
     def copy_pass_to_clipboard(self, password):
         #password = password.encode('utf-8') 
+        print("In copy to clipboard")
         p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
         p.stdin.write(password)
         p.stdin.close()
         retcode = p.wait()
+        return "Password copied to clipboard!"
 
     def enc_and_add_password(self, new_password, password_file, derived_key):
         new_password = new_password.encode('utf-8')
@@ -357,17 +369,27 @@ class Vault(Frame):
         account_line_num = 1
         ifile = open(username_file, 'r')
         for line in ifile:
+            print(line)
             if username not in line or url not in line:
+                print("not in this line")
                 account_line_num += 1
             else: 
-                return copy_searched_password_to_clipboard(account_line_num, password_file)
+                print("found:", username, url)
+                return self.copy_searched_password_to_clipboard(account_line_num, password_file)
+
+        return "That account was not found"
 
     def copy_searched_password_to_clipboard(self, account_line_num, password_file):
         password_line_num = 0
         ifile = open(password_file, 'rb')
+        print("in password file")
         for line in ifile:
             if account_line_num == password_line_num:
-                copy_pass_to_clipboard(line[32:])
+                print("found in line", password_line_num)
+                return self.copy_pass_to_clipboard(line[32:])
+            else:
+                password_line_num += 1
+        return "Error"
 
     def __init__(self, master):
         Frame.__init__(self, master)               
