@@ -346,6 +346,7 @@ class Vault(Frame):
         p.stdin.write(password)
         p.stdin.close()
         retcode = p.wait()
+        password=""
         return "Password copied to clipboard!"
 
     def enc_and_add_password(self, new_password, password_file, derived_key):

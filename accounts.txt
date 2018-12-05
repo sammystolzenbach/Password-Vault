@@ -1,4 +1,0 @@
-1 USERNAME:sam | URL:gmail
-2 USERNAME:peter | URL:yahoo
-3 USERNAME:jack | URL:sir
-4 USERNAME:mara | URL:hotmail
