@@ -17,10 +17,9 @@ class Vault(Frame):
     #Start Screen - if program is already set up #
     def start_screen(self):
         self.parse_file("passwords.hex")
-        self.line_count = 0
+        self.line_count = self.count_accounts()
+        self.pass_count = self.line_count
         self.attempts = 0
-
-        #start_screen GUI#
         self.frame = Frame(self.master, bg="#282828")
         self.headLbl = Label(self.frame, text="Vault Password Manager", 
                              bg="black", fg="white", font=("Courier New", 20))
@@ -31,7 +30,7 @@ class Vault(Frame):
                                 font=("Courier New", 18))
         self.pswd_label.pack(side=TOP, fill=X)
         self.password_input = StringVar()
-        self.password_box = Entry(self.pswd_frame, show='*'
+        self.password_box = Entry(self.pswd_frame, show='*',
                                   textvariable=self.password_input)
         self.password_box.bind('<Return>', self.login)
         self.password_box.pack(side=TOP)
@@ -140,7 +139,6 @@ class Vault(Frame):
         self.new_account_label = Label(self.options_frame, height=2,bg="#282828",
                                        text="New Account Information", 
                                        fg="white", font=("Courier New", 20))
-        # new username and URL entry
         self.new_account_label.pack(side=TOP, fill=X)
         self.new_username = StringVar()
         self.new_url = StringVar()
@@ -159,8 +157,6 @@ class Vault(Frame):
                                    font=("Courier New", 18))
         self.new_url_label.pack(side=TOP)
         self.new_url_entry.pack(side=TOP)
-
-        # new password entry - generate or enter #
         self.password_frame = Frame(self.options_frame, bg="#282828")
         self.password_frame.pack(expand=YES, fill=BOTH)
         self.new_password = StringVar()
@@ -182,7 +178,6 @@ class Vault(Frame):
                                          command=self.new_account_entries,
                                          highlightbackground="#282828")
         self.add_account_button.pack(side=TOP, pady=10)
-        # new account entry result
         self.add_result = StringVar()
         self.add_result.set("")
         self.result_label = Label(self.options_frame, height=2, bg="#282828",
@@ -195,12 +190,25 @@ class Vault(Frame):
                                        font=("Courier New", 18), 
                                        command=self.go_home)
         self.back_home_button.pack(side=BOTTOM, pady=5)
-
         self.options_frame.pack(expand=YES, fill=BOTH, pady=20)
 
     def go_home(self):
         self.frame.destroy()
         self.main_screen()
+
+    def count_accounts(self):
+        count = 0
+        if os.path.isfile("./accounts.txt"):
+            ifile = open("accounts.txt", 'r')
+
+            for line in ifile:
+                count += 1
+            return count
+
+        else:
+            return count
+
+
 
     def new_account_entries(self):
         new_usr = self.new_username.get()
@@ -218,12 +226,10 @@ class Vault(Frame):
             self.new_password.delete(0, END)
             self.new_url_entry.delete(0, END)
             self.new_user.delete(0, END)
-            print(new_url, new_usr, new_pass)
             self.add_username_url_password(new_url, new_usr, new_pass,
                                            "passwords.hex", "accounts.txt")
 
     def strength_validated(self, password):
-        print(password)
         SpecialSym = ['$','@','#','!','%','^','*','(',')','+','-','[',']']
         if any(char in SpecialSym for char in password):
             if len(password) > 11 and len(password) < 33:
@@ -255,7 +261,6 @@ class Vault(Frame):
     def login(self, event):
         success = False
         self.password_attempt = self.password_input.get()
-        print("attempts: ", self.attempts)
 
         if (self.attempts >= 3):
             self.validated.set("3 attempts exceeded. Account locked.")
@@ -270,18 +275,21 @@ class Vault(Frame):
                 self.main_screen()
 
     def search_for_password(self):
-        username = self.username_input.get()
-        url = self.url_input.get()
 
-        if username == "":
-            self.search_result.set("Please enter the username")
-        elif url == "":
-            self.search_result.set("Please enter the URL")
+        if os.path.isfile("./accounts.txt"):
+            username = self.username_input.get()
+            url = self.url_input.get()
+
+            if username == "":
+                self.search_result.set("Please enter the username")
+            elif url == "":
+                self.search_result.set("Please enter the URL")
+            else:
+                result = self.search_username_or_url("accounts.txt", username, url, 
+                                                     "passwords.hex")
+                self.search_result.set(result)
         else:
-            print("calling search username/url")
-            result = self.search_username_or_url("accounts.txt", username, url, 
-                                                 "passwords.hex")
-            self.search_result.set(result)
+            self.search_result.set("No accounts yet - Add one!")
 
 
     def create_derived_key(self, master_pass, password_file):
@@ -297,7 +305,7 @@ class Vault(Frame):
         enc_master_iv = iv_cipher.encrypt(master_iv)
         ofile = open(password_file, 'wb')
         length_enc_padded_master_pass = len(enc_padded_master_pass).to_bytes(2, 'big')
-        
+
         ofile.write(salt + enc_master_iv + length_enc_padded_master_pass + enc_padded_master_pass)     #write out to file
         ofile.write(b'\n')
         ofile.close()
@@ -334,7 +342,6 @@ class Vault(Frame):
                 return False
             
     def copy_pass_to_clipboard(self, password):
-        print("In copy to clipboard")
         p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
         p.stdin.write(password)
         p.stdin.close()
@@ -342,14 +349,18 @@ class Vault(Frame):
         return "Password copied to clipboard!"
 
     def enc_and_add_password(self, new_password, password_file, derived_key):
+        self.pass_count += 1
         new_password = new_password.encode('utf-8')
         padded_new_password = Padding.pad(new_password, AES.block_size)     
         iv = Random.get_random_bytes(AES.block_size)
         cipher = AES.new(derived_key, AES.MODE_CBC, iv)
         enc_padded_new_password = cipher.encrypt(padded_new_password)
-        with open(password_file, "ab") as myfile:        
-            myfile.write(iv+enc_padded_new_password)    # Append clear iv and encrypted password to file
-            myfile.write(b'\n') 
+        length = len(enc_padded_new_password)
+        with open(password_file, "ab") as myfile: 
+            flag = b'#'+((self.pass_count).to_bytes(3, byteorder='big'))+b'#'
+            myfile.write(flag)
+            myfile.write(length.to_bytes(2, byteorder='big'))
+            myfile.write(iv+enc_padded_new_password)
      
     def add_username_url_password(self, url, username, password, password_file, account_file): 
         self.line_count += 1
@@ -359,6 +370,7 @@ class Vault(Frame):
             myfile.write('\n')
 
     def gen_new_password(self):
+        self.new_password.delete(0, END)
         password = ""
         for i in range(0, 24):
             password += random.choice("!#$%&'()*+,-./:;<=>?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
@@ -368,29 +380,33 @@ class Vault(Frame):
         account_line_num = 1
         ifile = open(username_file, 'r')
         for line in ifile:
-            print(line)
             if username not in line or url not in line:
-                print("not in this line")
                 account_line_num += 1
             else: 
-                print("found:", username, url)
                 return self.copy_searched_password_to_clipboard(account_line_num, password_file)
 
         return "That account was not found"
 
     def copy_searched_password_to_clipboard(self, account_line_num, password_file):
-        password_line_num = -1
+        password_line_num = 0
         ifile = open(password_file, 'rb')
+        passwords = ifile.read()
 
-        for line in ifile:
-            if account_line_num == password_line_num:
-                cipher = AES.new(self.derived_key, AES.MODE_CBC, line[:16])
-                plaintext_password = cipher.decrypt(line[16:-1])
-                plaintext_password = Padding.unpad(plaintext_password, AES.block_size)
-                return self.copy_pass_to_clipboard(plaintext_password)
-            else:
-                password_line_num += 1
-        return "An Error Occured"
+        for byte in range(0, len(passwords)):
+            if passwords[byte:byte+1] == b'#':
+                num_in_bytes = passwords[byte+1:byte+4]
+                num = int.from_bytes(num_in_bytes, byteorder='big')
+                if num == account_line_num and passwords[byte+4:byte+5] == b'#':
+                    length_in_bytes = passwords[byte+5:byte+7]
+                    length = int.from_bytes(length_in_bytes, byteorder='big')
+                    iv = passwords[byte+7:byte+23]
+                    enc_pass_padded = passwords[byte+23:byte+23+length]
+                    cipher = AES.new(self.derived_key, AES.MODE_CBC, iv)
+                    plaintext_password = cipher.decrypt(enc_pass_padded)
+                    plaintext_password = Padding.unpad(plaintext_password, AES.block_size)
+                    return self.copy_pass_to_clipboard(plaintext_password)
+        return "An error occured"
+
 
     def __init__(self, master):
         Frame.__init__(self, master)               
