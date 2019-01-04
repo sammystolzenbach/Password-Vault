@@ -11,7 +11,6 @@ from Crypto.Random import random
 import re
 import subprocess
 
-
 class Vault(Frame):
 
     #Start Screen - if program is already set up #
